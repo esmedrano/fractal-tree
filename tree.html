@@ -1,80 +1,147 @@
+<!-- 
+Fractal Terminology:
+trunk- a line
+branch- a group of lines comprising a section of the tree
+parent- a vector with an endpoint from which two children start
+child- a vector with a start point at the endpoint of the parent
+family- a 'branch' or a group of lines comprising of a parent and its two children
+-->
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Page Title</title>
-    </head>
-    <body bgcolor="black">
-        <canvas id="fractalTree" width="300" height="300"></canvas>
-        <script>
-            var c=document.getElementById("fractalTree");
-            var ctx=c.getContext("2d");
-            var PI = 3.1415;
-            ctx.fillStyle = "blue";
-            ctx.fillRect(0, 0, 300, 300);
-            class FractalTree {
-                constructor(trunk_len, theta, theta_inc, max_depth) {
-                    this.self = this;
-                    this.trunk_len = trunk_len;
-                    this.shrink_rate = .1;
-                    this.theta = theta;
-                    this.holder = 0;
-                    this.theta_inc = theta_inc;
-                    this.max_depth = max_depth;
-                    this.thetas = [PI / 2];
-                    this.points = [];
-                    this.start_p = [150, 300];
-                    this.end_p1 = 0;
-                    this.end_p2 = 0;
-                    this.depth = 1; 
-                    this.child = 0;
-                    this.count = 0;
-                    this.pair = 0;
-                }
-                root() {
-                    ctx.beginPath;
-                    ctx.moveTo(this.start_p[0], this.start_p[1]);    
-                    this.start_p[1] -= this.trunk_len;
-                    ctx.lineTo(this.start_p[0], this.start_p[1]);
-                    ctx.stroke();
-                    this.self.branch(this.start_p[0], this.start_p[1]);
-                }
-                branch(start_p1, start_p2) {
-                    this.trunk_len -= this.trunk_len * this.shrink_rate;
-                    for (;this.child < 2 ** this.depth;) {
-                        this.holder = this.thetas[this.pair];
-                        if (this.child % 2 == 0) {
-                            this.thetas[this.pair] -= this.theta_inc;
-                            this.thetas.push(this.thetas[this.pair]);
-                        }
-                        if (this.child % 2 != 0) {
-                            this.thetas[this.pair] += this.theta_inc;
-                            this.thetas.push(this.thetas[this.pair]);
-                        }
-                        ctx.beginPath();
-                        ctx.moveTo(start_p1, start_p2);
-                        this.end_p1 = start_p1 - Math.cos(this.thetas[this.pair]) * this.trunk_len;
-                        this.end_p2 = start_p2 - Math.sin(this.thetas[this.pair]) * this.trunk_len;
-                        ctx.lineTo(this.end_p1, this.end_p2);
-                        ctx.stroke();
-                        this.points.push([this.end_p1, this.end_p2]);
-                        this.thetas[this.pair] = this.holder;
-                        this.child ++;
-                        this.count ++;
-                        if (this.count % 2 == 0 && this.count != 0) {
-                            start_p1 = this.points[this.pair][0];
-                            start_p2 = this.points[this.pair][1];
-                            this.pair ++;
-                        }
-                    }
-                    this.child = 0;
-                    this.depth ++;
-                    if (this.depth <= this.max_depth) {
-                        this.self.branch(start_p1, start_p2);
-                    }
-                }
-            }
-            fractal = new FractalTree(50, PI / 2, PI / 6, 5);
-            fractal.root();
-        </script>
-    </body>
+ <head>
+  <title>Fractal Tree</title>
+  <!--Roboto font source-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+ </head>
+ <style>
+  body {  /* effects all bodies */
+   background-color: black;
+   color: white;  /* text color */
+   font-family: 'Roboto', Helvetica;  /* will use first font that works */
+  }
+ </style>
+ <body>
+  <canvas id="fractalTree" width="300" height="300"></canvas>  <!--create canvas to draw on-->
+  <div>
+   <span> 
+    <input type="range" min="1" max="100" value="50" class="slider" id="scale">  <!--slider: initial line length-->
+    <input type="range" min="0" max="1" value=".1" step=".05" class="slider" id="shrink">  <!--slider: shrinkrate-->
+   </span>
+  </div>
+  <div>
+   <span> 
+    <input type="range" min="0" max="3.1415" value="1.57075" step=".05" class="slider" id="angle">  <!--slider: angle of rotation-->
+    <input type="range" min="0" max="6.283" value=".523583" step=".05" class="slider" id="angle_inc">   <!--slider: angle of separation-->
+   </span>
+  </div>
+  <div>
+   <span>
+    <input type="range" min="0" max="20" value="5" step="1" class="slider" id="depth">  <!--slider: fractal/recursion depth-->
+   </span>
+  </div>
+ </body> 
+ <script>
+  var c=document.getElementById("fractalTree");  // access canvas 
+  var ctx=c.getContext("2d");  // rendering 2d scene
+  var PI = 3.1415;
+  ctx.fillStyle = "blue";  
+  ctx.fillRect(0, 0, c.width, c.height);  // fill entire canvas
+  class FractalTree {
+   constructor(trunk_len, shrink_rate, theta, theta_inc, max_depth) {
+    this.self = this;
+    this.trunk_len = trunk_len;  // initial line length
+    this.shrink_rate = shrink_rate;  // length shrink rate
+    this.theta = theta;          // angle of rotation; the first offset angle from which the offset angles of each family are determined
+    this.holder = 0;             // temp holder for offset angle value of current family
+    this.theta_inc = theta_inc;  // amount the offset angle is incremented for each family
+    this.max_depth = max_depth;  // max recursion depth; also how many layers the fractal has
+    this.thetas = [this.theta];  // list containing the offset angle for each family 
+    this.points = [];            // list containing start point of each line
+    this.start_p = [150, 300];   // initial line start point
+    this.end_p1 = 0;             // holder for passing redefined start point to list
+    this.end_p2 = 0;             // y coordinate value of holder
+    this.depth = 1;  // current recursion depth and current fractal iteration
+    this.child = 0;  // a line sith start point at the endpoint of the parent; every parent has two children
+    this.count = 0;  // increment by one each 'for' iteration; counts total number of children
+    this.pair = 0;   // increment by one every other 'for' iteration; counts pairs of children
+   }
+   root() {  // draw the first line
+    ctx.beginPath;  // draw within this and the stroke() call
+    ctx.moveTo(this.start_p[0], this.start_p[1]);  // set start point
+    this.start_p[0] -= Math.cos(this.theta) * this.trunk_len;  // create a vector(start_point, new start_point) with direction theta
+    this.start_p[1] -= Math.sin(this.theta) * this.trunk_len;  // y coordinate of vector endpoint
+    ctx.lineTo(this.start_p[0], this.start_p[1]);  // draw line to new start point which is now the endpoint of the vector
+    ctx.stroke();  // close path and update screen
+    this.self.branch(this.start_p[0], this.start_p[1]);  // pass new start point to branch()
+   }
+   branch(start_p1, start_p2) {  // this function is called recursively; the depth variable specifies the current recursion depth indexed at 1; draw one layer of children containing '2 ** depth' children
+    this.trunk_len -= this.trunk_len * this.shrink_rate;  // line/trunk length reduced every time this function is called
+    for (;this.child < 2 ** this.depth;) {  // draw all children in current layer
+     this.holder = this.thetas[this.pair];  // every parent has two chidren- both children share a unique offset angle 
+     if (this.child % 2 == 0) {  // counting from left to right, this is the child on the right, or the 'even' child; 
+      this.thetas[this.pair] -= this.theta_inc;  // update vector direction
+      this.thetas.push(this.thetas[this.pair]);  // store the new direction 
+     }
+     if (this.child % 2 != 0) {  // counting from left to right, this is the child on the left of each family, or the 'even' child;
+      this.thetas[this.pair] += this.theta_inc;  // update vector direction
+      this.thetas.push(this.thetas[this.pair]);  // store the new direction
+     }
+     ctx.beginPath();
+     ctx.moveTo(start_p1, start_p2);  // set start point
+     this.end_p1 = start_p1 - Math.cos(this.thetas[this.pair]) * this.trunk_len;  // set endpoint
+     this.end_p2 = start_p2 - Math.sin(this.thetas[this.pair]) * this.trunk_len;
+     ctx.lineTo(this.end_p1, this.end_p2);  // draw line
+     ctx.stroke();  // update screen
+     this.points.push([this.end_p1, this.end_p2]);  // store the end point for use as the next start point
+     this.thetas[this.pair] = this.holder;  // reset the family offset angle so that the next child in that family can go the opposite direction
+     this.child ++;  
+     this.count ++;
+     if (this.count % 2 == 0 && this.count != 0) {
+      start_p1 = this.points[this.pair][0];  // access the next start point from the stored endpoints; the lines are drawn from left to right
+      start_p2 = this.points[this.pair][1];
+      this.pair ++;  // if count is possitive it means that the next for loop iteration will draw a child in the next family going from left to right
+     }
+    }
+    this.child = 0;  // reset the value of child for each layer so that the for loop iterates the appropriate amount
+    this.depth ++;  // increment recursion depth
+    if (this.depth <= this.max_depth) {
+     this.self.branch(start_p1, start_p2);  // call the recursion if not deep
+    }
+   }
+  }
+  fractal = new FractalTree(50, .1, PI / 2, PI / 6, 5);
+  fractal.root();  // draw the fractal 
+ scale.oninput = function() {  // on slider input: change the starting length
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, c.width, c.height);
+  fractal = new FractalTree(this.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
+  fractal.root();  // redraw the fractal eith new values 
+ }
+ shrink.oninput = function() {  // on slider input: change the shrink rate
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, c.width, c.height);    
+  fractal = new FractalTree(scale.value, this.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
+  fractal.root();
+ }    
+ angle.oninput = function() {  // on slider input: change angle of rotation
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, c.width, c.height);
+  fractal = new FractalTree(scale.value, shrink.value, parseFloat(this.value), parseFloat(angle_inc.value), depth.value);
+  fractal.root();
+ }          
+ angle_inc.oninput = function() {  // on slider input: change the offset angle increment value
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, c.width, c.height);
+  fractal = new FractalTree(scale.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
+  fractal.root();
+ }
+ depth.oninput = function() {  // on slider input: change the maximum recursion depth
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.fillRect(0, 0, c.width, c.height);
+  fractal = new FractalTree(scale.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), this.value);
+  fractal.root();
+ }
+ </script> 
 </html>
