@@ -46,8 +46,6 @@ family- a 'branch' or a group of lines comprising of a parent and its two childr
   var c=document.getElementById("fractalTree");  // access canvas 
   var ctx=c.getContext("2d");  // rendering 2d scene
   var PI = 3.1415;
-  ctx.fillStyle = "blue";  
-  ctx.fillRect(0, 0, c.width, c.height);  // fill entire canvas
   class FractalTree {
    constructor(trunk_len, shrink_rate, theta, theta_inc, max_depth) {
     this.self = this;
@@ -68,6 +66,8 @@ family- a 'branch' or a group of lines comprising of a parent and its two childr
     this.pair = 0;   // increment by one every other 'for' iteration; counts pairs of children
    }
    root() {  // draw the first line
+    ctx.fillStyle = "blue";  
+    ctx.fillRect(0, 0, c.width, c.height);  // fill entire canvas
     ctx.beginPath;  // draw within this and the stroke() call
     ctx.moveTo(this.start_p[0], this.start_p[1]);  // set start point
     this.start_p[0] -= Math.cos(this.theta) * this.trunk_len;  // create a vector(start_point, new start_point) with direction theta
@@ -114,14 +114,10 @@ family- a 'branch' or a group of lines comprising of a parent and its two childr
   fractal = new FractalTree(50, .1, PI / 2, PI / 6, 5);
   fractal.root();  // draw the fractal 
  scale.oninput = function() {  // on slider input: change the starting length
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillRect(0, 0, c.width, c.height);
   fractal = new FractalTree(this.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
   fractal.root();  // redraw the fractal eith new values 
  }
- shrink.oninput = function() {  // on slider input: change the shrink rate
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillRect(0, 0, c.width, c.height);    
+ shrink.oninput = function() {  // on slider input: change the shrink rate   
   fractal = new FractalTree(scale.value, this.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
   fractal.root();
  }    
@@ -132,14 +128,10 @@ family- a 'branch' or a group of lines comprising of a parent and its two childr
   fractal.root();
  }          
  angle_inc.oninput = function() {  // on slider input: change the offset angle increment value
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillRect(0, 0, c.width, c.height);
   fractal = new FractalTree(scale.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), depth.value);
   fractal.root();
  }
  depth.oninput = function() {  // on slider input: change the maximum recursion depth
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillRect(0, 0, c.width, c.height);
   fractal = new FractalTree(scale.value, shrink.value, parseFloat(angle.value), parseFloat(angle_inc.value), this.value);
   fractal.root();
  }
